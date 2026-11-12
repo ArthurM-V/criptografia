@@ -99,12 +99,16 @@ async function loadImage(file) {
   const url = URL.createObjectURL(file);
   try {
     const image = new Image();
-    await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = () => reject(new Error("Não foi possível abrir esta imagem.")); image.src = url; });
+    await new Promise((resolve, reject) => { image.onload = resolve; image.onerror = () => reject(new Error("Não foi possível abrir esta imagem neste navegador. Tente convertê-la para PNG ou JPEG.")); image.src = url; });
     const canvas = document.createElement("canvas"); canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
     const ctx = canvas.getContext("2d", { alpha: false, colorSpace: "srgb", willReadFrequently: true });
     ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.drawImage(image, 0, 0);
     return ctx.getImageData(0, 0, canvas.width, canvas.height, { colorSpace: "srgb" });
   } finally { URL.revokeObjectURL(url); }
+}
+async function isPng(file) {
+  const signature = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+  return signature.length === 8 && [137, 80, 78, 71, 13, 10, 26, 10].every((value, index) => signature[index] === value);
 }
 async function chooseImage(files, mode) {
   try {
@@ -112,7 +116,7 @@ async function chooseImage(files, mode) {
     if (list.length > 1) throw new Error("Envie apenas uma imagem por vez.");
     const [file] = list;
     if (!file) return;
-    if (mode === "reveal" && file.type !== "image/png") throw new Error("Para revelar, use o PNG original gerado pela ferramenta.");
+    if (mode === "reveal" && !(await isPng(file))) throw new Error("Para revelar, envie o PNG original gerado pela ferramenta. Se ele veio de um aplicativo de mensagem, baixe-o ou envie-o como arquivo/documento — não como foto.");
     const image = await loadImage(file);
     if (image.width * image.height * 3 < HEADER_BITS) throw new Error("A imagem é pequena demais para conter um cabeçalho.");
     if (mode === "hide") {

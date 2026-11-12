@@ -35,7 +35,7 @@
       <div class="workflow-grid">
         <div class="card">
           <h2>1. Escolha uma imagem</h2>
-          <label class="drop-zone" id="hide-drop-zone" for="hide-image"><input id="hide-image" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" hidden><span class="drop-icon" aria-hidden="true">↑</span><strong>Arraste uma imagem aqui</strong><span>ou clique para procurar</span><small>PNG, JPEG, WebP ou BMP · uma imagem por vez</small></label>
+          <label class="drop-zone" id="hide-drop-zone" for="hide-image"><input id="hide-image" type="file" accept="image/*,.png,.jpg,.jpeg,.webp,.bmp,.avif,.heic,.heif" hidden><span class="drop-icon" aria-hidden="true">↑</span><strong>Arraste uma imagem aqui</strong><span>ou clique para procurar</span><small>Use uma imagem enviada ou salva pelo seu aplicativo · uma imagem por vez</small></label>
           <div id="hide-file-card" class="file-card is-hidden" role="status" aria-live="polite" hidden><span class="file-card-icon" aria-hidden="true">▧</span><div class="file-card-details"><strong id="hide-image-info">exemplo.png</strong><span id="hide-image-meta">—</span></div><span class="file-ready">Carregada</span></div>
           <div id="capacity-box" class="capacity-box is-hidden"><div><span>Capacidade disponível</span><strong id="capacity-value">—</strong></div><div class="capacity-track"><i id="capacity-bar"></i></div><div class="capacity-usage"><span id="capacity-usage">Uso estimado: 0 B de —</span><strong id="capacity-percent">0%</strong></div><small id="capacity-detail">Estimativa antes da compressão e da criptografia.</small></div>
         </div>
@@ -50,7 +50,7 @@
     </section>
     <section id="reveal-panel" class="panel is-hidden" role="tabpanel" aria-labelledby="reveal-tab" hidden>
       <div class="workflow-grid reveal-grid">
-        <div class="card"><h2>1. Envie o PNG</h2><label class="drop-zone" id="reveal-drop-zone" for="reveal-image"><input id="reveal-image" type="file" accept="image/png" hidden><span class="drop-icon" aria-hidden="true">↑</span><strong>Arraste o PNG aqui</strong><span>ou clique para procurar</span><small>Uma imagem por vez; ela não deve ter sido recomprimida.</small></label><div id="reveal-file-card" class="file-card is-hidden" role="status" aria-live="polite" hidden><span class="file-card-icon" aria-hidden="true">▧</span><div class="file-card-details"><strong id="reveal-image-info">exemplo.png</strong><span id="reveal-image-meta">—</span></div><span class="file-ready">Carregada</span></div></div>
+        <div class="card"><h2>1. Envie o PNG</h2><label class="drop-zone" id="reveal-drop-zone" for="reveal-image"><input id="reveal-image" type="file" accept="image/png,.png" hidden><span class="drop-icon" aria-hidden="true">↑</span><strong>Arraste o PNG aqui</strong><span>ou clique para procurar</span><small>Envie o PNG original como arquivo/documento; aplicativos podem alterar o tipo do arquivo.</small></label><div id="reveal-file-card" class="file-card is-hidden" role="status" aria-live="polite" hidden><span class="file-card-icon" aria-hidden="true">▧</span><div class="file-card-details"><strong id="reveal-image-info">exemplo.png</strong><span id="reveal-image-meta">—</span></div><span class="file-ready">Carregada</span></div></div>
         <div class="card"><h2>2. Informe a chave</h2><label for="reveal-password">Chave de descriptografia</label><div class="password-wrap"><input id="reveal-password" type="password" autocomplete="current-password" placeholder="Cole a chave gerada"><button class="icon-button" type="button" data-toggle-password="reveal-password" aria-label="Mostrar chave">◉</button></div><button id="reveal-button" class="primary-button" type="button" disabled>Revelar mensagem</button><div id="reveal-status" class="status" aria-live="polite"></div></div>
       </div>
       <section id="revealed-result" class="revealed-result is-hidden" aria-live="polite"><div class="result-heading"><div><p class="eyebrow">MENSAGEM REVELADA</p><h2>Texto extraído</h2></div><button id="copy-button" class="secondary-button" type="button">Copiar texto</button></div><pre id="revealed-text"></pre></section>
@@ -67,7 +67,7 @@
         <div class="decryption-key-heading"><div><h3 id="decryption-key-title">Chave de descriptografia</h3><p>Ela é necessária para revelar a mensagem. Copie e guarde em um local seguro.</p></div><span id="key-copy-status" class="key-copy-status" aria-live="polite"></span></div>
         <div class="key-value-row"><code id="decryption-key" tabindex="0"></code><button id="copy-key-button" class="secondary-button" type="button">Copiar chave de descriptografia</button></div>
       </section>
-      <p id="result-warning" class="warning modal-warning"><strong>Use somente o PNG baixado.</strong> JPEG, WebP, redimensionamento e redes sociais podem destruir a mensagem.</p>
+      <p id="result-warning" class="warning modal-warning"><strong>Use somente o PNG baixado.</strong> Para compartilhá-lo, envie como arquivo/documento: aplicativos que reenviam como foto, JPEG, WebP, redimensionamento e redes sociais podem destruir a mensagem.</p>
       <div class="comparison"><figure><figcaption>Original</figcaption><canvas id="original-canvas"></canvas></figure><figure><figcaption>Com mensagem</figcaption><canvas id="encoded-canvas"></canvas></figure></div>
     </section>
   </div>
