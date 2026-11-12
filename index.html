@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Esteganografia local: esconda texto criptografado em imagens PNG.">
+  <meta name="description" content="Esteganografia local: esconda texto criptografado em imagens (PNG ou JPEG).">
   <title>Esteganografia privada</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -23,10 +23,10 @@
     </aside>
   <main class="app-shell">
     <header class="hero">
-      <p class="lede">Esconda texto criptografado em uma imagem PNG.</p>
+      <p class="lede">Esconda texto criptografado em uma imagem.</p>
       <button id="samples-toggle" class="secondary-button samples-button" type="button" aria-expanded="false" aria-controls="samples-drawer">Ver imagens de amostra</button>
     </header>
-    <section class="privacy-note" aria-label="Informação de privacidade"><span aria-hidden="true">⌁</span><p>Processamento 100% local · AES‑GCM + PBKDF2 · saída sem perdas em PNG</p></section>
+    <section class="privacy-note" aria-label="Informação de privacidade"><span aria-hidden="true">⌁</span><p>Processamento 100% local · AES‑GCM + PBKDF2 · saída em PNG</p></section>
     <nav class="tabs" role="tablist" aria-label="Modo">
       <button class="tab is-active" id="hide-tab" type="button" role="tab" aria-selected="true" aria-controls="hide-panel">Esconder mensagem</button>
       <button class="tab" id="reveal-tab" type="button" role="tab" aria-selected="false" aria-controls="reveal-panel">Revelar mensagem</button>
@@ -42,6 +42,7 @@
         <div class="card">
           <h2>2. Escreva a mensagem</h2>
           <label for="message">Mensagem</label><textarea id="message" maxlength="1000000" placeholder="Digite ou cole seu texto secreto…" spellcheck="true"></textarea><div class="field-row"><span id="message-count">0 caracteres</span><span id="message-size">0 B UTF‑8</span></div>
+          <label for="hide-mode">Modo</label><select id="hide-mode"><option value="robust" selected>Resistente a compartilhamento (WhatsApp, Telegram…)</option><option value="lossless">Máxima capacidade (somente PNG original)</option></select><p id="mode-hint" class="hint"></p>
           <p class="hint key-generation-note">Uma chave de descriptografia segura será gerada automaticamente. Guarde-a para revelar a mensagem depois.</p>
           <button id="hide-button" class="primary-button" type="button" disabled>Criptografar e esconder</button>
         </div>
@@ -50,7 +51,7 @@
     </section>
     <section id="reveal-panel" class="panel is-hidden" role="tabpanel" aria-labelledby="reveal-tab" hidden>
       <div class="workflow-grid reveal-grid">
-        <div class="card"><h2>1. Envie o PNG</h2><label class="drop-zone" id="reveal-drop-zone" for="reveal-image"><input id="reveal-image" type="file" accept="image/png,.png" hidden><span class="drop-icon" aria-hidden="true">↑</span><strong>Arraste o PNG aqui</strong><span>ou clique para procurar</span><small>Envie o PNG original como arquivo/documento; aplicativos podem alterar o tipo do arquivo.</small></label><div id="reveal-file-card" class="file-card is-hidden" role="status" aria-live="polite" hidden><span class="file-card-icon" aria-hidden="true">▧</span><div class="file-card-details"><strong id="reveal-image-info">exemplo.png</strong><span id="reveal-image-meta">—</span></div><span class="file-ready">Carregada</span></div></div>
+        <div class="card"><h2>1. Envie a imagem</h2><label class="drop-zone" id="reveal-drop-zone" for="reveal-image"><input id="reveal-image" type="file" accept="image/*,.png,.jpg,.jpeg" hidden><span class="drop-icon" aria-hidden="true">↑</span><strong>Arraste a imagem aqui</strong><span>ou clique para procurar</span><small>Aceita PNG ou JPEG recebido por aplicativos. Não edite, corte nem redimensione.</small></label><div id="reveal-file-card" class="file-card is-hidden" role="status" aria-live="polite" hidden><span class="file-card-icon" aria-hidden="true">▧</span><div class="file-card-details"><strong id="reveal-image-info">exemplo.png</strong><span id="reveal-image-meta">—</span></div><span class="file-ready">Carregada</span></div></div>
         <div class="card"><h2>2. Informe a chave</h2><label for="reveal-password">Chave de descriptografia</label><div class="password-wrap"><input id="reveal-password" type="password" autocomplete="current-password" placeholder="Cole a chave gerada"><button class="icon-button" type="button" data-toggle-password="reveal-password" aria-label="Mostrar chave">◉</button></div><button id="reveal-button" class="primary-button" type="button" disabled>Revelar mensagem</button><div id="reveal-status" class="status" aria-live="polite"></div></div>
       </div>
       <section id="revealed-result" class="revealed-result is-hidden" aria-live="polite"><div class="result-heading"><div><p class="eyebrow">MENSAGEM REVELADA</p><h2>Texto extraído</h2></div><button id="copy-button" class="secondary-button" type="button">Copiar texto</button></div><pre id="revealed-text"></pre></section>
@@ -73,6 +74,7 @@
   </div>
   <button id="reopen-result" class="floating-result is-hidden" type="button" aria-label="Reabrir resultado da mensagem escondida" hidden>↗ <span>Ver resultado</span></button>
   <div id="download-toast" class="toast is-hidden" role="status" aria-live="polite" hidden><span aria-hidden="true">✓</span><p>PNG baixado. A mensagem foi limpa.</p></div>
+  <script src="robust.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ const HEADER_BITS = HEADER_BYTES * 8, PBKDF2_ITERATIONS = 600000;
 const encoder = new TextEncoder(), decoder = new TextDecoder();
 const $ = (s) => document.querySelector(s);
 const ui = {
-  hideImage: $("#hide-image"), revealImage: $("#reveal-image"), message: $("#message"), revealPassword: $("#reveal-password"), hideButton: $("#hide-button"), revealButton: $("#reveal-button"), hideStatus: $("#hide-status"), revealStatus: $("#reveal-status"), hideInfo: $("#hide-image-info"), revealInfo: $("#reveal-image-info"), hideMeta: $("#hide-image-meta"), revealMeta: $("#reveal-image-meta"), hideFileCard: $("#hide-file-card"), revealFileCard: $("#reveal-file-card"), capacityBox: $("#capacity-box"), capacityValue: $("#capacity-value"), capacityBar: $("#capacity-bar"), capacityUsage: $("#capacity-usage"), capacityPercent: $("#capacity-percent"), capacityDetail: $("#capacity-detail"), messageCount: $("#message-count"), messageSize: $("#message-size"), original: $("#original-canvas"), encoded: $("#encoded-canvas"), hideModal: $("#hide-modal"), closeModal: $("#close-result-modal"), reopenResult: $("#reopen-result"), downloadToast: $("#download-toast"), payloadSummary: $("#payload-summary"), download: $("#download-link"), decryptionKey: $("#decryption-key"), copyKey: $("#copy-key-button"), keyCopyStatus: $("#key-copy-status"), revealResult: $("#revealed-result"), revealedText: $("#revealed-text"), copy: $("#copy-button"), samplesToggle: $("#samples-toggle"), sampleDrawer: $("#samples-drawer"), closeSamples: $("#close-samples")
+  hideImage: $("#hide-image"), revealImage: $("#reveal-image"), message: $("#message"), revealPassword: $("#reveal-password"), hideButton: $("#hide-button"), revealButton: $("#reveal-button"), hideStatus: $("#hide-status"), revealStatus: $("#reveal-status"), hideInfo: $("#hide-image-info"), revealInfo: $("#reveal-image-info"), hideMeta: $("#hide-image-meta"), revealMeta: $("#reveal-image-meta"), hideFileCard: $("#hide-file-card"), revealFileCard: $("#reveal-file-card"), capacityBox: $("#capacity-box"), capacityValue: $("#capacity-value"), capacityBar: $("#capacity-bar"), capacityUsage: $("#capacity-usage"), capacityPercent: $("#capacity-percent"), capacityDetail: $("#capacity-detail"), messageCount: $("#message-count"), messageSize: $("#message-size"), original: $("#original-canvas"), encoded: $("#encoded-canvas"), hideModal: $("#hide-modal"), closeModal: $("#close-result-modal"), reopenResult: $("#reopen-result"), downloadToast: $("#download-toast"), payloadSummary: $("#payload-summary"), download: $("#download-link"), decryptionKey: $("#decryption-key"), copyKey: $("#copy-key-button"), keyCopyStatus: $("#key-copy-status"), revealResult: $("#revealed-result"), revealedText: $("#revealed-text"), copy: $("#copy-button"), samplesToggle: $("#samples-toggle"), hideMode: $("#hide-mode"), modeHint: $("#mode-hint"), resultWarning: $("#result-warning"), sampleDrawer: $("#samples-drawer"), closeSamples: $("#close-samples")
 };
 let hideSource, hideSourceName, revealSource, downloadUrl, outputPendingDownload = false, generatedKey = "", decryptionKeyCopied = false, toastTimer;
 
@@ -21,6 +21,13 @@ function outputFileName(name) {
 }
 function status(el, text = "", error = false) { el.textContent = text; el.classList.toggle("error", error); }
 function capacity(image) { return Math.floor((image.width * image.height * 3 - HEADER_BITS) / 8); }
+function currentCapacity() { return ui.hideMode.value === "robust" ? RobustStego.capacityBytes(hideSource.width, hideSource.height) : capacity(hideSource); }
+function refreshCapacity() { if (!hideSource) return; ui.capacityValue.textContent = formatBytes(currentCapacity()); updateCapacityEstimate(); }
+function updateModeHint() {
+  ui.modeHint.textContent = ui.hideMode.value === "robust"
+    ? "Sobrevive à compressão JPEG de WhatsApp, Telegram e redes sociais. A imagem é reduzida para até 1280 px e a capacidade é menor."
+    : "Maior capacidade e nenhuma alteração visível, mas só funciona com o PNG original (envie como arquivo/documento).";
+}
 function updateButtons() { ui.hideButton.disabled = !hideSource; ui.revealButton.disabled = !(revealSource && ui.revealPassword.value); }
 function updateMessageInfo() {
   const text = ui.message.value, bytes = encoder.encode(text).length;
@@ -34,7 +41,7 @@ function setCapacityUsage(used, max, exact = false) {
 }
 function updateCapacityEstimate() {
   if (!hideSource) return;
-  const max = capacity(hideSource), estimated = encoder.encode(ui.message.value).length + 32;
+  const max = currentCapacity(), estimated = encoder.encode(ui.message.value).length + 32;
   setCapacityUsage(estimated, max);
 }
 function openResultModal() {
@@ -106,22 +113,17 @@ async function loadImage(file) {
     return ctx.getImageData(0, 0, canvas.width, canvas.height, { colorSpace: "srgb" });
   } finally { URL.revokeObjectURL(url); }
 }
-async function isPng(file) {
-  const signature = new Uint8Array(await file.slice(0, 8).arrayBuffer());
-  return signature.length === 8 && [137, 80, 78, 71, 13, 10, 26, 10].every((value, index) => signature[index] === value);
-}
 async function chooseImage(files, mode) {
   try {
     const list = Array.from(files || []);
     if (list.length > 1) throw new Error("Envie apenas uma imagem por vez.");
     const [file] = list;
     if (!file) return;
-    if (mode === "reveal" && !(await isPng(file))) throw new Error("Para revelar, envie o PNG original gerado pela ferramenta. Se ele veio de um aplicativo de mensagem, baixe-o ou envie-o como arquivo/documento — não como foto.");
     const image = await loadImage(file);
     if (image.width * image.height * 3 < HEADER_BITS) throw new Error("A imagem é pequena demais para conter um cabeçalho.");
     if (mode === "hide") {
       hideSource = image; hideSourceName = file.name; ui.hideInfo.textContent = file.name; ui.hideMeta.textContent = `${image.width} × ${image.height} px · ${formatBytes(file.size)}`; ui.hideFileCard.hidden = false; ui.hideFileCard.classList.remove("is-hidden");
-      const cap = capacity(image); ui.capacityValue.textContent = formatBytes(cap); ui.capacityBox.classList.remove("is-hidden"); updateCapacityEstimate(); status(ui.hideStatus);
+      ui.capacityBox.classList.remove("is-hidden"); refreshCapacity(); status(ui.hideStatus);
     } else { revealSource = image; ui.revealInfo.textContent = file.name; ui.revealMeta.textContent = `${image.width} × ${image.height} px · ${formatBytes(file.size)}`; ui.revealFileCard.hidden = false; ui.revealFileCard.classList.remove("is-hidden"); status(ui.revealStatus); }
     updateButtons();
   } catch (e) { status(mode === "hide" ? ui.hideStatus : ui.revealStatus, e.message, true); }
@@ -160,26 +162,62 @@ async function embed(image, text, password) {
   return { output, encryptedLength: encrypted.length, max };
 }
 async function extract(image, password) {
-  const pixels = image.width * image.height * 3; if (pixels < HEADER_BITS) throw new Error("Esta imagem não contém uma mensagem do Oculto.");
-  const header = readBytes(image.data, HEADER_BYTES, i => i); if (!same(header.slice(0, 4), MAGIC) || header[4] !== VERSION) throw new Error("Imagem sem mensagem compatível ou arquivo alterado.");
+  const pixels = image.width * image.height * 3; if (pixels < HEADER_BITS) throw Object.assign(new Error("Esta imagem não contém uma mensagem do Oculto."), { code: "NO_LSB" });
+  const header = readBytes(image.data, HEADER_BYTES, i => i); if (!same(header.slice(0, 4), MAGIC) || header[4] !== VERSION) throw Object.assign(new Error("Imagem sem mensagem compatível ou arquivo alterado."), { code: "NO_LSB" });
   const salt = header.slice(5, 5 + SALT_BYTES), iv = header.slice(5 + SALT_BYTES, 5 + SALT_BYTES + IV_BYTES), length = fromU32(header, 5 + SALT_BYTES + IV_BYTES);
   if (length < 17 || length > capacity(image)) throw new Error("Cabeçalho inválido ou imagem corrompida.");
   const index = await permutation(password, salt, pixels - HEADER_BITS), encrypted = readBytes(image.data, length, index);
   try { const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv, additionalData: new Uint8Array([...MAGIC, VERSION]) }, await keyFrom(password, salt), encrypted); return decoder.decode(await decompress(new Uint8Array(plain))); }
   catch { throw new Error("Chave incorreta ou imagem sem mensagem íntegra."); }
 }
+// ==== ROBUST-BEGIN
+const ROBUST_AAD = new Uint8Array([0x4f, 0x52, 1]);
+async function keyAndIv(password, salt) {
+  const base = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" }, base, 352));
+  return { key: await crypto.subtle.importKey("raw", bits.slice(0, 32), "AES-GCM", false, ["encrypt", "decrypt"]), iv: bits.slice(32, 44) };
+}
+async function embedRobust(image, text, password) {
+  const salt = crypto.getRandomValues(new Uint8Array(RobustStego.SALT_BYTES)), { key, iv } = await keyAndIv(password, salt);
+  const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: ROBUST_AAD }, key, await compress(encoder.encode(text))));
+  const max = RobustStego.capacityBytes(image.width, image.height);
+  if (encrypted.length > max) throw new Error(`A mensagem protegida ocupa ${formatBytes(encrypted.length)}, mas o modo resistente comporta ${formatBytes(max)} nesta imagem. Use uma imagem maior, encurte o texto ou escolha “Máxima capacidade”.`);
+  const result = RobustStego.embed(image, salt, encrypted);
+  return { output: new ImageData(result.data, result.width, result.height, { colorSpace: "srgb" }), encryptedLength: encrypted.length, max };
+}
+async function extractRobust(image, password) {
+  const { salt, payload } = RobustStego.extract(image), { key, iv } = await keyAndIv(password, salt);
+  try { const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv, additionalData: ROBUST_AAD }, key, payload); return decoder.decode(await decompress(new Uint8Array(plain))); }
+  catch { throw new Error("Chave incorreta ou imagem alterada demais (compressão forte, redimensionamento, corte ou filtro)."); }
+}
+async function extractAny(image, password) {
+  let lsbError;
+  try { return await extract(image, password); } catch (e) { lsbError = e; }
+  try { return await extractRobust(image, password); }
+  catch (e) {
+    if (e.code !== "NO_ROBUST") throw e;
+    if (lsbError.code === "NO_LSB") throw new Error("Nenhuma mensagem encontrada. A imagem pode ter sido redimensionada, cortada ou comprimida demais — ou foi gerada em “Máxima capacidade” e perdeu os dados ao ser reenviada como foto.");
+    throw lsbError;
+  }
+}
+// ==== ROBUST-END
 function draw(canvas, image) { canvas.width = image.width; canvas.height = image.height; canvas.getContext("2d", { alpha: false, colorSpace: "srgb" }).putImageData(image, 0, 0); }
 function png(canvas) { return new Promise(resolve => canvas.toBlob(resolve, "image/png")); }
+function setResultWarning(robust) {
+  ui.resultWarning.innerHTML = robust
+    ? "<strong>Pode enviar como foto.</strong> O modo resistente sobrevive à compressão JPEG de apps de mensagem e redes sociais, mas não a redimensionamento, corte, filtros ou capturas de tela. Quem receber deve enviar a imagem ao site sem editá‑la."
+    : "<strong>Use somente o PNG baixado.</strong> Para compartilhá‑lo, envie como arquivo/documento: aplicativos que reenviam como foto, JPEG, WebP, redimensionamento e redes sociais podem destruir a mensagem.";
+}
 async function hide() {
   try {
     ui.hideButton.disabled = true; status(ui.hideStatus, "Comprimindo e criptografando sua mensagem…");
-    const key = createDecryptionKey(); const result = await embed(hideSource, ui.message.value, key); draw(ui.original, hideSource); draw(ui.encoded, result.output);
+    const key = createDecryptionKey(), robust = ui.hideMode.value === "robust", source = robust ? RobustStego.fit(hideSource) : hideSource; const result = robust ? await embedRobust(source, ui.message.value, key) : await embed(source, ui.message.value, key); draw(ui.original, source); draw(ui.encoded, result.output); setResultWarning(robust);
     const blob = await png(ui.encoded); if (!blob) throw new Error("Não foi possível gerar o PNG."); if (downloadUrl) URL.revokeObjectURL(downloadUrl); downloadUrl = URL.createObjectURL(blob); ui.download.href = downloadUrl; ui.download.download = outputFileName(hideSourceName || "imagem");
     setGeneratedKey(key); outputPendingDownload = true; if (ui.reopenResult) { ui.reopenResult.hidden = true; ui.reopenResult.classList.add("is-hidden"); } setCapacityUsage(result.encryptedLength, result.max, true); ui.payloadSummary.textContent = `Payload criptografado: ${formatBytes(result.encryptedLength)} de ${formatBytes(result.max)}.`; status(ui.hideStatus); openResultModal();
   } catch (e) { status(ui.hideStatus, e.message || "Não foi possível esconder a mensagem.", true); } finally { updateButtons(); }
 }
 async function reveal() {
-  try { ui.revealButton.disabled = true; status(ui.revealStatus, "Lendo, verificando e descriptografando…"); const text = await extract(revealSource, ui.revealPassword.value); ui.revealedText.textContent = text; ui.revealResult.classList.remove("is-hidden"); status(ui.revealStatus, "Mensagem autenticada e revelada."); }
+  try { ui.revealButton.disabled = true; status(ui.revealStatus, "Lendo, verificando e descriptografando…"); const text = await extractAny(revealSource, ui.revealPassword.value); ui.revealedText.textContent = text; ui.revealResult.classList.remove("is-hidden"); status(ui.revealStatus, "Mensagem autenticada e revelada."); }
   catch (e) { ui.revealResult.classList.add("is-hidden"); status(ui.revealStatus, e.message || "Não foi possível revelar a mensagem.", true); } finally { updateButtons(); }
 }
 function wireDrop(zoneSelector, input, mode) {
@@ -199,4 +237,4 @@ document.addEventListener("keydown", event => { if (event.key !== "Escape") retu
 ui.copy.addEventListener("click", async () => { try { await navigator.clipboard.writeText(ui.revealedText.textContent); ui.copy.textContent = "Copiado"; setTimeout(() => ui.copy.textContent = "Copiar texto", 1400); } catch { ui.copy.textContent = "Copie manualmente"; } });
 ui.copyKey.addEventListener("click", copyDecryptionKey);
 window.addEventListener("beforeunload", event => { if (!hasUncopiedKey()) return; event.preventDefault(); event.returnValue = ""; });
-wireDrop("#hide-drop-zone", ui.hideImage, "hide"); wireDrop("#reveal-drop-zone", ui.revealImage, "reveal"); updateMessageInfo();
+ui.hideMode.addEventListener("change", () => { updateModeHint(); refreshCapacity(); }); updateModeHint(); wireDrop("#hide-drop-zone", ui.hideImage, "hide"); wireDrop("#reveal-drop-zone", ui.revealImage, "reveal"); updateMessageInfo();

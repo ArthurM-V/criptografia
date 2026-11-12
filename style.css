@@ -818,3 +818,20 @@ footer {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; }
 }
+
+/* Seletor de modo */
+select {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+  color: var(--ink);
+  background: #fff;
+  font: inherit;
+  outline: 0;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(51, 70, 224, 0.14);
+}
