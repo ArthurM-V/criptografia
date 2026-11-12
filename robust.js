@@ -1,14 +1,11 @@
 "use strict";
-// Modo resistente a compartilhamento: embute bits no domínio da DCT 8×8 (mesmo domínio do JPEG)
-// usando QIM + repetição com decodificação suave. Sobrevive a recompressão JPEG moderada
-// (WhatsApp, Telegram, Instagram…) desde que a imagem NÃO seja redimensionada/cortada.
 (function (root) {
-  const DELTA = 36;                 // passo do QIM: maior = mais resistente, mais visível
-  const MAX_SIDE = 1280;            // lado maior da saída (abaixo do limite dos apps → sem redimensionamento)
+  const DELTA = 36;
+  const MAX_SIDE = 1280;
   const HEADER_REPEAT = 15, MIN_REPEAT = 5, MAX_REPEAT = 40;
-  const SALT_BYTES = 16, HEADER_BYTES = 2 + 2 + SALT_BYTES + 1; // magia, tamanho, salt, CRC8
-  const MAGIC = [0x4f, 0x52];       // "OR"
-  const COEFS = [[1, 1], [0, 2], [2, 0], [1, 2], [2, 1], [2, 2], [0, 3], [3, 0]]; // [vertical, horizontal]
+  const SALT_BYTES = 16, HEADER_BYTES = 2 + 2 + SALT_BYTES + 1;
+  const MAGIC = [0x4f, 0x52];
+  const COEFS = [[1, 1], [0, 2], [2, 0], [1, 2], [2, 1], [2, 2], [0, 3], [3, 0]];
   const K = COEFS.length, HEADER_BITS = HEADER_BYTES * 8;
 
   const C = Array.from({ length: 8 }, (_, u) => Array.from({ length: 8 }, (_, x) => (u ? 0.5 : Math.SQRT1_2 / 2) * Math.cos((2 * x + 1) * u * Math.PI / 16)));
@@ -23,7 +20,6 @@
     const f = fittedSize(w, h), avail = cellsFor(f.width, f.height) - HEADER_BITS * HEADER_REPEAT;
     return Math.max(0, Math.min(65535, Math.floor(avail / MIN_REPEAT / 8)));
   }
-  // Redimensiona (se preciso) e corta para múltiplos de 8, devolvendo ImageData. Só no navegador.
   function fit(image) {
     const { width, height } = fittedSize(image.width, image.height);
     const src = document.createElement("canvas"); src.width = image.width; src.height = image.height;
@@ -50,9 +46,8 @@
   }
   function coef(block, k) { const b = BASIS[k]; let s = 0; for (let i = 0; i < 64; i++) s += block[i] * b[i]; return s; }
   function qim(c, bit) { return bit ? (Math.round(c / DELTA - 0.5) + 0.5) * DELTA : Math.round(c / DELTA) * DELTA; }
-  function soft(c) { const v = c / DELTA; return Math.abs(v - Math.round(v)) - Math.abs(v - (Math.round(v - 0.5) + 0.5)); } // >0 → bit 1
+  function soft(c) { const v = c / DELTA; return Math.abs(v - Math.round(v)) - Math.abs(v - (Math.round(v - 0.5) + 0.5)); }
 
-  // image: {data(RGBA), width, height}, já ajustada com fit(). Devolve uma cópia modificada.
   function embed(image, salt, payload) {
     if (salt.length !== SALT_BYTES) throw new Error("Salt inválido.");
     if (payload.length > 65535) throw new Error("Mensagem grande demais para o modo resistente.");
@@ -74,7 +69,6 @@
     }
     return { data: out, width, height, payloadBytes: payload.length, repeat: R, max: capacityBytes(width, height) };
   }
-  // Devolve { salt, payload } ou lança Error com code "NO_ROBUST" se não houver cabeçalho válido.
   function extract(image) {
     const { width, height } = image, bw = width >> 3, bh = height >> 3, total = bw * bh * K, notFound = () => Object.assign(new Error("Sem mensagem do modo resistente."), { code: "NO_ROBUST" });
     if (total <= HEADER_BITS * HEADER_REPEAT) throw notFound();

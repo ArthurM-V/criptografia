@@ -1,6 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
 
-/* ---------- Tokens ---------- */
 :root {
   --ink: #0f1729;
   --text-2: #475069;
@@ -40,7 +39,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Malha de pixels no topo: remete ao "pixel" onde a mensagem fica escondida */
 body::before {
   content: "";
   position: absolute;
@@ -67,7 +65,6 @@ body::before {
   padding: 36px 0 48px;
 }
 
-/* ---------- Hero ---------- */
 .hero { max-width: 760px; }
 
 .eyebrow {
@@ -131,14 +128,12 @@ body::before {
 
 .privacy-note p { margin: 0; }
 
-/* Evita que nomes de arquivos, chaves e mensagens extensas alarguem a página. */
 .privacy-note p,
 .file-card-details,
 .capacity-usage span,
 .payload-summary,
 .decryption-key p { overflow-wrap: anywhere; }
 
-/* ---------- Abas (controle segmentado) ---------- */
 .tabs {
   display: inline-flex;
   gap: 4px;
@@ -172,7 +167,6 @@ body::before {
 .panel { padding-top: 24px; }
 .is-hidden { display: none !important; }
 
-/* ---------- Layout ---------- */
 .workflow-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -180,12 +174,6 @@ body::before {
   align-items: start;
 }
 
-/* .reveal-grid { grid-template-columns: 0.9fr 1.1fr; } */
-
-/* Mantém os dois cartões principais como um bloco visual equilibrado. */
-/* .workflow-grid:not(.reveal-grid) .card { min-height: 500px; } */
-
-/* ---------- Cartões ---------- */
 .card,
 .result,
 .revealed-result {
@@ -207,7 +195,6 @@ body::before {
   line-height: 1.2;
 }
 
-/* ---------- Upload ---------- */
 .drop-zone {
   display: flex;
   min-height: 200px;
@@ -298,7 +285,6 @@ body::before {
 
 .field-row { display: flex; justify-content: space-between; gap: 12px; }
 
-/* ---------- Formulário ---------- */
 label {
   display: block;
   margin: 0 0 7px;
@@ -353,7 +339,6 @@ input:focus {
 
 .icon-button:hover { background: var(--accent-soft); color: var(--accent); }
 
-/* ---------- Barras de capacidade ---------- */
 .strength,
 .capacity-track {
   overflow: hidden;
@@ -373,7 +358,6 @@ input:focus {
   transition: width 0.25s ease, background 0.25s ease;
 }
 
-/* ---------- Botões ---------- */
 .primary-button,
 .secondary-button {
   display: inline-flex;
@@ -416,7 +400,6 @@ input:focus {
 
 .secondary-button:hover { border-color: var(--accent); color: var(--accent-dark); background: var(--accent-soft); }
 
-/* ---------- Menu de amostras ---------- */
 .sample-drawer {
   --samples-width: min(410px, 78vw);
   flex: 0 0 auto;
@@ -486,7 +469,6 @@ input:focus {
 .sample-option span { display: block; padding: 10px 12px; font-size: 0.86rem; }
 .sample-option:hover { border-color: var(--accent); box-shadow: 0 8px 18px -12px rgba(36, 52, 184, 0.65); transform: translateY(-2px); }
 
-/* ---------- Foco visível (teclado) ---------- */
 .tab:focus-visible,
 .icon-button:focus-visible,
 .primary-button:focus-visible,
@@ -497,7 +479,6 @@ input:focus {
   outline-offset: 2px;
 }
 
-/* ---------- Capacidade ---------- */
 .capacity-box {
   margin-top: 20px;
   padding: 14px 16px;
@@ -536,7 +517,6 @@ input:focus {
 .capacity-usage span { color: var(--text-2); font-size: 0.78rem; }
 .capacity-usage strong { color: var(--accent-dark); font: 600 0.78rem var(--font-mono); }
 
-/* ---------- Avisos e status ---------- */
 .warning {
   margin: 20px 0;
   padding: 12px 14px;
@@ -564,7 +544,6 @@ input:focus {
   color: var(--danger);
 }
 
-/* ---------- Resultados ---------- */
 .result,
 .revealed-result { margin-top: 24px; }
 
@@ -617,7 +596,6 @@ input:focus {
   font: 14px/1.6 var(--font-mono);
 }
 
-/* ---------- Modal de conclusão ---------- */
 body.has-modal { overflow: hidden; }
 
 .modal {
@@ -744,7 +722,6 @@ footer {
   font-size: 0.8rem;
 }
 
-/* ---------- Responsivo ---------- */
 @media (max-width: 720px) {
   body::before { height: 420px; background-size: 28px 28px; }
   .app-shell { width: min(100% - 24px, 1080px); padding: 28px 0 36px; }
@@ -773,7 +750,6 @@ footer {
   .toast { top: 12px; left: 12px; width: calc(100vw - 24px); }
   .hero h1 { font-size: 2.9rem; }
 
-  /* Em telas pequenas o painel não pode comprimir o conteúdo principal. */
   .sample-drawer {
     --samples-width: min(380px, calc(100vw - 20px));
     position: fixed;
@@ -814,12 +790,10 @@ footer {
   .floating-result { right: 10px; bottom: 10px; min-height: 44px; padding: 9px 13px; }
 }
 
-/* ---------- Acessibilidade de movimento ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; }
 }
 
-/* Seletor de modo */
 select {
   width: 100%;
   border: 1px solid var(--line-strong);

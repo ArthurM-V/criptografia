@@ -1,17 +1,14 @@
 "use strict";
 
-// Header stays in the first RGB bits so extraction can find the salt. The encrypted
-// payload is spread through a deterministic, password-and-salt-derived permutation.
-const MAGIC = new Uint8Array([0x4f, 0x43, 0x55, 0x4c]); // OCUL
-const VERSION = 1;
-const SALT_BYTES = 16, IV_BYTES = 12, HEADER_BYTES = 4 + 1 + SALT_BYTES + IV_BYTES + 4;
-const HEADER_BITS = HEADER_BYTES * 8, PBKDF2_ITERATIONS = 600000;
+const PBKDF2_ITERATIONS = 600000;
 const encoder = new TextEncoder(), decoder = new TextDecoder();
 const $ = (s) => document.querySelector(s);
 const ui = {
   hideImage: $("#hide-image"), revealImage: $("#reveal-image"), message: $("#message"), revealPassword: $("#reveal-password"), hideButton: $("#hide-button"), revealButton: $("#reveal-button"), hideStatus: $("#hide-status"), revealStatus: $("#reveal-status"), hideInfo: $("#hide-image-info"), revealInfo: $("#reveal-image-info"), hideMeta: $("#hide-image-meta"), revealMeta: $("#reveal-image-meta"), hideFileCard: $("#hide-file-card"), revealFileCard: $("#reveal-file-card"), capacityBox: $("#capacity-box"), capacityValue: $("#capacity-value"), capacityBar: $("#capacity-bar"), capacityUsage: $("#capacity-usage"), capacityPercent: $("#capacity-percent"), capacityDetail: $("#capacity-detail"), messageCount: $("#message-count"), messageSize: $("#message-size"), original: $("#original-canvas"), encoded: $("#encoded-canvas"), hideModal: $("#hide-modal"), closeModal: $("#close-result-modal"), reopenResult: $("#reopen-result"), downloadToast: $("#download-toast"), payloadSummary: $("#payload-summary"), download: $("#download-link"), decryptionKey: $("#decryption-key"), copyKey: $("#copy-key-button"), keyCopyStatus: $("#key-copy-status"), revealResult: $("#revealed-result"), revealedText: $("#revealed-text"), copy: $("#copy-button"), samplesToggle: $("#samples-toggle"), hideMode: $("#hide-mode"), modeHint: $("#mode-hint"), resultWarning: $("#result-warning"), sampleDrawer: $("#samples-drawer"), closeSamples: $("#close-samples")
 };
 let hideSource, hideSourceName, revealSource, downloadUrl, outputPendingDownload = false, generatedKey = "", decryptionKeyCopied = false, toastTimer;
+
+const { HEADER_BITS, capacity, embed, extract } = StegoCore;
 
 function formatBytes(n) { return n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(2)} MB`; }
 function outputFileName(name) {
@@ -20,7 +17,6 @@ function outputFileName(name) {
   return `${base || "imagem"}_o.png`;
 }
 function status(el, text = "", error = false) { el.textContent = text; el.classList.toggle("error", error); }
-function capacity(image) { return Math.floor((image.width * image.height * 3 - HEADER_BITS) / 8); }
 function currentCapacity() { return ui.hideMode.value === "robust" ? RobustStego.capacityBytes(hideSource.width, hideSource.height) : capacity(hideSource); }
 function refreshCapacity() { if (!hideSource) return; ui.capacityValue.textContent = formatBytes(currentCapacity()); updateCapacityEstimate(); }
 function updateModeHint() {
@@ -129,48 +125,6 @@ async function chooseImage(files, mode) {
   } catch (e) { status(mode === "hide" ? ui.hideStatus : ui.revealStatus, e.message, true); }
 }
 
-function rgbOffset(i) { return Math.floor(i / 3) * 4 + i % 3; }
-function bitAt(data, i) { return data[rgbOffset(i)] & 1; }
-function setBit(data, i, bit) { const at = rgbOffset(i); data[at] = (data[at] & 254) | bit; }
-function eachBit(bytes, fn) { for (const byte of bytes) for (let shift = 7; shift >= 0; shift--) fn((byte >> shift) & 1); }
-function readBytes(data, length, indexAt) { const out = new Uint8Array(length); for (let i = 0; i < length * 8; i++) out[i >> 3] = (out[i >> 3] << 1) | bitAt(data, indexAt(i)); return out; }
-function u32(n) { return new Uint8Array([(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255]); }
-function fromU32(bytes, at) { return ((bytes[at] * 0x1000000 + (bytes[at + 1] << 16) + (bytes[at + 2] << 8) + bytes[at + 3]) >>> 0); }
-function same(a, b) { return a.length === b.length && a.every((v, i) => v === b[i]); }
-function gcd(a, b) { while (b) [a, b] = [b, a % b]; return a; }
-async function permutation(password, salt, count) {
-  const pw = encoder.encode(password), joined = new Uint8Array(pw.length + salt.length); joined.set(pw); joined.set(salt, pw.length);
-  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", joined)), view = new DataView(hash.buffer);
-  const offset = view.getUint32(0) % count; let step = view.getUint32(4) % (count - 1) + 1;
-  while (gcd(step, count) !== 1) step = step === count - 1 ? 1 : step + 1;
-  return (i) => HEADER_BITS + ((offset + (i * step) % count) % count);
-}
-async function keyFrom(password, salt) {
-  const base = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]);
-  return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
-}
-async function compress(bytes) { if (!("CompressionStream" in window)) throw new Error("Navegador sem suporte a CompressionStream. Use uma versão recente de Chrome, Edge, Firefox ou Safari."); return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream("deflate"))).arrayBuffer()); }
-async function decompress(bytes) { if (!("DecompressionStream" in window)) throw new Error("Navegador sem suporte à descompressão."); return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer()); }
-
-async function embed(image, text, password) {
-  const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES)), iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
-  const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: new Uint8Array([...MAGIC, VERSION]) }, await keyFrom(password, salt), await compress(encoder.encode(text))));
-  const max = capacity(image); if (encrypted.length > max) throw new Error(`A mensagem protegida ocupa ${formatBytes(encrypted.length)}, mas a imagem comporta ${formatBytes(max)}.`);
-  const output = new ImageData(new Uint8ClampedArray(image.data), image.width, image.height, { colorSpace: "srgb" });
-  const header = new Uint8Array(HEADER_BYTES); header.set(MAGIC); header[4] = VERSION; header.set(salt, 5); header.set(iv, 5 + SALT_BYTES); header.set(u32(encrypted.length), 5 + SALT_BYTES + IV_BYTES);
-  let i = 0; eachBit(header, bit => setBit(output.data, i++, bit)); const index = await permutation(password, salt, image.width * image.height * 3 - HEADER_BITS); i = 0; eachBit(encrypted, bit => setBit(output.data, index(i++), bit));
-  return { output, encryptedLength: encrypted.length, max };
-}
-async function extract(image, password) {
-  const pixels = image.width * image.height * 3; if (pixels < HEADER_BITS) throw Object.assign(new Error("Esta imagem não contém uma mensagem do Oculto."), { code: "NO_LSB" });
-  const header = readBytes(image.data, HEADER_BYTES, i => i); if (!same(header.slice(0, 4), MAGIC) || header[4] !== VERSION) throw Object.assign(new Error("Imagem sem mensagem compatível ou arquivo alterado."), { code: "NO_LSB" });
-  const salt = header.slice(5, 5 + SALT_BYTES), iv = header.slice(5 + SALT_BYTES, 5 + SALT_BYTES + IV_BYTES), length = fromU32(header, 5 + SALT_BYTES + IV_BYTES);
-  if (length < 17 || length > capacity(image)) throw new Error("Cabeçalho inválido ou imagem corrompida.");
-  const index = await permutation(password, salt, pixels - HEADER_BITS), encrypted = readBytes(image.data, length, index);
-  try { const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv, additionalData: new Uint8Array([...MAGIC, VERSION]) }, await keyFrom(password, salt), encrypted); return decoder.decode(await decompress(new Uint8Array(plain))); }
-  catch { throw new Error("Chave incorreta ou imagem sem mensagem íntegra."); }
-}
-// ==== ROBUST-BEGIN
 const ROBUST_AAD = new Uint8Array([0x4f, 0x52, 1]);
 async function keyAndIv(password, salt) {
   const base = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
@@ -200,7 +154,6 @@ async function extractAny(image, password) {
     throw lsbError;
   }
 }
-// ==== ROBUST-END
 function draw(canvas, image) { canvas.width = image.width; canvas.height = image.height; canvas.getContext("2d", { alpha: false, colorSpace: "srgb" }).putImageData(image, 0, 0); }
 function png(canvas) { return new Promise(resolve => canvas.toBlob(resolve, "image/png")); }
 function setResultWarning(robust) {
