@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Esteganografia local: esconda texto criptografado em imagens PNG.">
+  <title>Esteganografia privada</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <aside id="samples-drawer" class="sample-drawer" aria-labelledby="samples-title" aria-hidden="true">
+      <div id="samples-drawer-panel" class="sample-drawer-panel">
+        <div class="sample-drawer-heading"><div><p class="eyebrow">EXPERIMENTE</p><h2 id="samples-title">Imagens de amostra</h2></div><button id="close-samples" class="drawer-close" type="button" aria-label="Fechar amostras">×</button></div>
+        <p>Escolha uma imagem para carregá-la e testar a ferramenta.</p>
+        <div class="sample-list">
+          <button class="sample-option" type="button" data-sample="images/sample_1.jpg"><img src="images/sample_1.jpg" alt=""><span>Amostra 1</span></button>
+          <button class="sample-option" type="button" data-sample="images/sample_2.jpg"><img src="images/sample_2.jpg" alt=""><span>Amostra 2</span></button>
+          <button class="sample-option" type="button" data-sample="images/sample_3.jpg"><img src="images/sample_3.jpg" alt=""><span>Amostra 3</span></button>
+          <button class="sample-option" type="button" data-sample="images/sample_4.jpg"><img src="images/sample_4.jpg" alt=""><span>Amostra 4</span></button>
+        </div>
+      </div>
+    </aside>
+  <main class="app-shell">
+    <header class="hero">
+      <p class="lede">Esconda texto criptografado em uma imagem PNG.</p>
+      <button id="samples-toggle" class="secondary-button samples-button" type="button" aria-expanded="false" aria-controls="samples-drawer">Ver imagens de amostra</button>
+    </header>
+    <section class="privacy-note" aria-label="Informação de privacidade"><span aria-hidden="true">⌁</span><p>Processamento 100% local · AES‑GCM + PBKDF2 · saída sem perdas em PNG</p></section>
+    <nav class="tabs" role="tablist" aria-label="Modo">
+      <button class="tab is-active" id="hide-tab" type="button" role="tab" aria-selected="true" aria-controls="hide-panel">Esconder mensagem</button>
+      <button class="tab" id="reveal-tab" type="button" role="tab" aria-selected="false" aria-controls="reveal-panel">Revelar mensagem</button>
+    </nav>
+    <section id="hide-panel" class="panel" role="tabpanel" aria-labelledby="hide-tab">
+      <div class="workflow-grid">
+        <div class="card">
+          <h2>1. Escolha uma imagem</h2>
+          <label class="drop-zone" id="hide-drop-zone" for="hide-image"><input id="hide-image" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" hidden><span class="drop-icon" aria-hidden="true">↑</span><strong>Arraste uma imagem aqui</strong><span>ou clique para procurar</span><small>PNG, JPEG, WebP ou BMP · uma imagem por vez</small></label>
+          <div id="hide-file-card" class="file-card is-hidden" role="status" aria-live="polite" hidden><span class="file-card-icon" aria-hidden="true">▧</span><div class="file-card-details"><strong id="hide-image-info">exemplo.png</strong><span id="hide-image-meta">—</span></div><span class="file-ready">Carregada</span></div>
+          <div id="capacity-box" class="capacity-box is-hidden"><div><span>Capacidade disponível</span><strong id="capacity-value">—</strong></div><div class="capacity-track"><i id="capacity-bar"></i></div><div class="capacity-usage"><span id="capacity-usage">Uso estimado: 0 B de —</span><strong id="capacity-percent">0%</strong></div><small id="capacity-detail">Estimativa antes da compressão e da criptografia.</small></div>
+        </div>
+        <div class="card">
+          <h2>2. Escreva a mensagem</h2>
+          <label for="message">Mensagem</label><textarea id="message" maxlength="1000000" placeholder="Digite ou cole seu texto secreto…" spellcheck="true"></textarea><div class="field-row"><span id="message-count">0 caracteres</span><span id="message-size">0 B UTF‑8</span></div>
+          <p class="hint key-generation-note">Uma chave de descriptografia segura será gerada automaticamente. Guarde-a para revelar a mensagem depois.</p>
+          <button id="hide-button" class="primary-button" type="button" disabled>Criptografar e esconder</button>
+        </div>
+      </div>
+      <div id="hide-status" class="status" aria-live="polite"></div>
+    </section>
+    <section id="reveal-panel" class="panel is-hidden" role="tabpanel" aria-labelledby="reveal-tab" hidden>
+      <div class="workflow-grid reveal-grid">
+        <div class="card"><h2>1. Envie o PNG</h2><label class="drop-zone" id="reveal-drop-zone" for="reveal-image"><input id="reveal-image" type="file" accept="image/png" hidden><span class="drop-icon" aria-hidden="true">↑</span><strong>Arraste o PNG aqui</strong><span>ou clique para procurar</span><small>Uma imagem por vez; ela não deve ter sido recomprimida.</small></label><div id="reveal-file-card" class="file-card is-hidden" role="status" aria-live="polite" hidden><span class="file-card-icon" aria-hidden="true">▧</span><div class="file-card-details"><strong id="reveal-image-info">exemplo.png</strong><span id="reveal-image-meta">—</span></div><span class="file-ready">Carregada</span></div></div>
+        <div class="card"><h2>2. Informe a chave</h2><label for="reveal-password">Chave de descriptografia</label><div class="password-wrap"><input id="reveal-password" type="password" autocomplete="current-password" placeholder="Cole a chave gerada"><button class="icon-button" type="button" data-toggle-password="reveal-password" aria-label="Mostrar chave">◉</button></div><button id="reveal-button" class="primary-button" type="button" disabled>Revelar mensagem</button><div id="reveal-status" class="status" aria-live="polite"></div></div>
+      </div>
+      <section id="revealed-result" class="revealed-result is-hidden" aria-live="polite"><div class="result-heading"><div><p class="eyebrow">MENSAGEM REVELADA</p><h2>Texto extraído</h2></div><button id="copy-button" class="secondary-button" type="button">Copiar texto</button></div><pre id="revealed-text"></pre></section>
+    </section>
+  </main>
+  </div>
+  <div id="hide-modal" class="modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="result-heading" aria-describedby="result-warning" hidden>
+    <div class="modal-backdrop" data-close-result-modal></div>
+    <section class="modal-dialog">
+      <button id="close-result-modal" class="modal-close" type="button" aria-label="Fechar resultado">×</button>
+      <div class="result-heading"><div><p class="eyebrow">CONCLUÍDO</p><h2 id="result-heading">Mensagem escondida</h2></div><a id="download-link" class="primary-button" download="oculto.png">Baixar PNG</a></div>
+      <p id="payload-summary" class="payload-summary" aria-live="polite"></p>
+      <section class="decryption-key" aria-labelledby="decryption-key-title">
+        <div class="decryption-key-heading"><div><h3 id="decryption-key-title">Chave de descriptografia</h3><p>Ela é necessária para revelar a mensagem. Copie e guarde em um local seguro.</p></div><span id="key-copy-status" class="key-copy-status" aria-live="polite"></span></div>
+        <div class="key-value-row"><code id="decryption-key" tabindex="0"></code><button id="copy-key-button" class="secondary-button" type="button">Copiar chave de descriptografia</button></div>
+      </section>
+      <p id="result-warning" class="warning modal-warning"><strong>Use somente o PNG baixado.</strong> JPEG, WebP, redimensionamento e redes sociais podem destruir a mensagem.</p>
+      <div class="comparison"><figure><figcaption>Original</figcaption><canvas id="original-canvas"></canvas></figure><figure><figcaption>Com mensagem</figcaption><canvas id="encoded-canvas"></canvas></figure></div>
+    </section>
+  </div>
+  <button id="reopen-result" class="floating-result is-hidden" type="button" aria-label="Reabrir resultado da mensagem escondida" hidden>↗ <span>Ver resultado</span></button>
+  <div id="download-toast" class="toast is-hidden" role="status" aria-live="polite" hidden><span aria-hidden="true">✓</span><p>PNG baixado. A mensagem foi limpa.</p></div>
+  <script src="script.js"></script>
+</body>
+</html>
