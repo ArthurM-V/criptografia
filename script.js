@@ -8,7 +8,7 @@ const ui = {
 };
 let hideSource, hideSourceName, revealSource, downloadUrl, outputPendingDownload = false, generatedKey = "", decryptionKeyCopied = false, toastTimer;
 
-const { HEADER_BITS, capacity, embed, extract } = StegoCore;
+const { HEADER_BITS, capacity, compress, decompress, embed, extract } = StegoCore;
 
 function formatBytes(n) { return n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(2)} MB`; }
 function outputFileName(name) {

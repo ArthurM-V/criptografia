@@ -30,3 +30,11 @@ test("esconde e revela uma mensagem no modo de máxima capacidade", async ({ pag
   await expect(page.locator("#revealed-text")).toHaveText("Mensagem automatizada: Olá 🔐");
   await expect(page.locator("#reveal-status")).toContainText("autenticada");
 });
+
+test("esconde uma mensagem no modo resistente", async ({ page }) => {
+  await page.goto("/");
+  await page.locator("#hide-image").setInputFiles("images/sample_1.jpg");
+  await page.locator("#message").fill("Mensagem resistente");
+  await page.locator("#hide-button").click();
+  await expect(page.locator("#hide-modal")).toBeVisible();
+});
