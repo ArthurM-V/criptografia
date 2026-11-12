@@ -131,6 +131,13 @@ body::before {
 
 .privacy-note p { margin: 0; }
 
+/* Evita que nomes de arquivos, chaves e mensagens extensas alarguem a página. */
+.privacy-note p,
+.file-card-details,
+.capacity-usage span,
+.payload-summary,
+.decryption-key p { overflow-wrap: anywhere; }
+
 /* ---------- Abas (controle segmentado) ---------- */
 .tabs {
   display: inline-flex;
@@ -739,25 +746,72 @@ footer {
 
 /* ---------- Responsivo ---------- */
 @media (max-width: 720px) {
-  .app-shell { width: min(100% - 24px, 1080px); padding-top: 40px; }
+  body::before { height: 420px; background-size: 28px 28px; }
+  .app-shell { width: min(100% - 24px, 1080px); padding: 28px 0 36px; }
+  .lede { margin-top: 16px; font-size: 1rem; }
+  .samples-button { width: 100%; margin-top: 18px; }
+  .privacy-note { align-items: flex-start; gap: 12px; margin: 28px 0 24px; padding: 13px 14px; }
   .workflow-grid,
   .reveal-grid,
   .comparison { grid-template-columns: 1fr; }
   .card,
   .result,
   .revealed-result { padding: 20px; }
-  .tabs { display: flex; }
-  .tab { flex: 1; padding: 10px 12px; }
+  .tabs { display: flex; width: 100%; }
+  .tab { flex: 1 1 0; min-width: 0; padding: 10px 8px; }
   .result-heading { align-items: flex-start; flex-direction: column; }
-  .result-heading .primary-button { width: 100%; }
-  .modal-dialog { padding: 52px 20px 20px; }
+  .result-heading .primary-button,
+  .result-heading .secondary-button { width: 100%; }
+  .modal { align-items: end; padding: 12px; }
+  .modal-dialog { width: 100%; max-height: calc(100dvh - 24px); padding: 52px 20px 20px; }
   .decryption-key-heading,
   .key-value-row { align-items: stretch; flex-direction: column; }
   .key-copy-status { text-align: left; }
   .key-value-row .secondary-button { width: 100%; }
+  .comparison canvas { max-height: min(320px, 42dvh); }
   .floating-result { right: 12px; bottom: 12px; }
   .toast { top: 12px; left: 12px; width: calc(100vw - 24px); }
   .hero h1 { font-size: 2.9rem; }
+
+  /* Em telas pequenas o painel não pode comprimir o conteúdo principal. */
+  .sample-drawer {
+    --samples-width: min(380px, calc(100vw - 20px));
+    position: fixed;
+    z-index: 40;
+    inset: 0 auto 0 0;
+    width: var(--samples-width);
+    height: 100dvh;
+    transform: translateX(-100%);
+    visibility: hidden;
+    box-shadow: 12px 0 36px rgba(15, 23, 41, 0.24);
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), visibility 0s linear 260ms;
+  }
+  .sample-drawer.is-open { width: var(--samples-width); transform: translateX(0); visibility: visible; transition-delay: 0s; }
+  .sample-drawer-panel { width: 100%; height: 100%; min-height: 0; padding: 20px; box-shadow: none; transform: none; }
+  .sample-drawer.is-open .sample-drawer-panel { transform: none; }
+}
+
+@media (max-width: 420px) {
+  .app-shell { width: min(100% - 20px, 1080px); padding-top: 20px; }
+  .card,
+  .result,
+  .revealed-result { padding: 16px; border-radius: 14px; }
+  .card h2,
+  .result h2,
+  .revealed-result h2 { font-size: 1.22rem; }
+  .drop-zone { min-height: 168px; padding: 16px 12px; }
+  .drop-zone small { max-width: 25ch; }
+  .file-card { align-items: flex-start; gap: 10px; padding: 10px; }
+  .file-ready { margin-left: 0; }
+  .field-row,
+  .capacity-box div:first-child,
+  .capacity-usage { align-items: flex-start; flex-direction: column; gap: 3px; }
+  .key-generation-note { padding: 10px 12px; }
+  .modal { padding: 8px; }
+  .modal-dialog { max-height: calc(100dvh - 16px); padding: 48px 16px 16px; border-radius: 14px; }
+  .decryption-key { padding: 14px; }
+  .revealed-result pre { padding: 14px; }
+  .floating-result { right: 10px; bottom: 10px; min-height: 44px; padding: 9px 13px; }
 }
 
 /* ---------- Acessibilidade de movimento ---------- */
